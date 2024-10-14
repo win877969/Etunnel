@@ -1,0 +1,11 @@
+name = "punya"
+main = "_worker.js"
+compatibility_date = "2023-05-26"
+node_compat = true
+workers_dev = true
+
+[vars]
+PROXYIP = "35.219.15.90"
+UUID = "75954589-c3ae-42a8-bb8d-506911bb92b2"
+pattern = "punya.bmkg.xyz"
+custom_domain = true 
