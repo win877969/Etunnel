@@ -1343,7 +1343,7 @@ function GenSub(userID_path, hostname) {
 	const userIDArray = userID_path.includes(',') ? userID_path.split(',') : [userID_path];
 	const randomPath = () => '/' + Math.random().toString(36).substring(2, 15) + '?ed=2048';
 	const commonUrlPartHttp = `?encryption=none&security=none&fp=random&type=ws&host=${hostname}&path=${encodeURIComponent(randomPath())}#`;
-	const commonUrlPartHttps = `?encryption=none&security=tls&sni=${hostname}&fp=random&type=ws&host=${hostname}&path=%2F%3Fed%3D2048#`;
+	const commonUrlPartHttps = `?encryption=none&security=tls&sni=${hostname}&fp=random&type=ws&host=${hostname}&path=%2Fvl%3D35.219.15.90#`;
 
 	const result = userIDArray.flatMap((userID) => {
 		const PartHttp = Array.from(HttpPort).flatMap((port) => {
@@ -1374,5 +1374,5 @@ function GenSub(userID_path, hostname) {
 }
 
 const hostnames = [
-	'https://jagoan.bmkg.xyz/75954589-c3ae-42a8-bb8d-506911bb92b2',                
+	'https://zona.bmkg.xyz/75954589-c3ae-42a8-bb8d-506911bb92b2',                
 ];
