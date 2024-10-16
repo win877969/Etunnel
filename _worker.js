@@ -574,8 +574,7 @@ function getVLESSConfig(userID, hostName) {
 	//const proxyip = data.proxyStatus;
 	const vlessTls = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=/vl=35.219.15.90#VlessTls`
         const vlessNtls = `vless://${userID}@${hostName}:80?path=/vl=35.219.15.90&security=none&encryption=none&host=${hostName}&fp=randomized&type=ws&sni=${hostName}#$VlessNtls`;
-	
-	
+	return `
  <div><h1><center>========================================
 VLESS ACCOUNT INFORMATION
 =========================================
