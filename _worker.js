@@ -164,7 +164,7 @@ async function vlessOverWSHandler(request) {
 //export default {
   //async fetch(request, env, ctx) {
     return new Response('Hello World!');
-  },
+ // },
 };
 	//return new Response(null, {
 		//status: 101,
