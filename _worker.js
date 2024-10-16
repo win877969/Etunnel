@@ -571,7 +571,7 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @returns {string}
  */
 function getVLESSConfig(userID, hostName) {
-	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2Fvl%3D35.219.15.90#${hostName}`
+	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2Fvl%3D35.219.15.90#VLESS ID`
 	return `
 ################################################################
 v2ray
@@ -582,7 +582,7 @@ ${vlessMain}
 clash-meta
 ---------------------------------------------------------------
 - type: vless
-  name: ${hostName}
+  name: VLESS ID
   server: ${hostName}
   port: 443
   uuid: ${userID}
