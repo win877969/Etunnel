@@ -672,4 +672,4 @@ ${htmlHead}
 </body>
 </html>`;
     } 
-}
+
