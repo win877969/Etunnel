@@ -570,40 +570,79 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @param {string | null} hostName
  * @returns {string}
  */
-function GenSub(userID_path, hostname) {
-	const userIDArray = userID_path.includes(',') ? userID_path.split(',') : [userID_path];
-	const randomPath = () => '/' + Math.random().toString(36).substring(2, 15) + '?ed=2048';
-	const commonUrlPartHttp = `?encryption=none&security=none&fp=random&type=ws&host=${hostname}&path=${encodeURIComponent(randomPath())}#`;
-	const commonUrlPartHttps = `?encryption=none&security=tls&sni=${hostname}&fp=random&type=ws&host=${hostname}&path=%2F%3Fed%3D2048#`;
-
-	const result = userIDArray.flatMap((userID) => {
-		const PartHttp = Array.from(HttpPort).flatMap((port) => {
-			if (!hostname.includes('pages.dev')) {
-				const urlPart = `${hostname}-HTTP-${port}`;
-				const mainProtocolHttp = atob(pt) + '://' + userID + atob(at) + hostname + ':' + port + commonUrlPartHttp + urlPart;
-				return proxyIPs.flatMap((proxyIP) => {
-					const secondaryProtocolHttp = atob(pt) + '://' + userID + atob(at) + proxyIP.split(':')[0] + ':' + proxyPort + commonUrlPartHttp + urlPart + '-' + proxyIP + '-' + atob(ed);
-					return [mainProtocolHttp, secondaryProtocolHttp];
-				});
-			}
-			return [];
-		});
-
-		const PartHttps = Array.from(HttpsPort).flatMap((port) => {
-			const urlPart = `${hostname}-HTTPS-${port}`;
-			const mainProtocolHttps = atob(pt) + '://' + userID + atob(at) + hostname + ':' + port + commonUrlPartHttps + urlPart;
-			return proxyIPs.flatMap((proxyIP) => {
-				const secondaryProtocolHttps = atob(pt) + '://' + userID + atob(at) + proxyIP.split(':')[0] + ':' + proxyPort + commonUrlPartHttps + urlPart + '-' + proxyIP + '-' + atob(ed);
-				return [mainProtocolHttps, secondaryProtocolHttps];
-			});
-		});
-
-		return [...PartHttp, ...PartHttps];
-	});
-
-	return result.join('\n');
+function getVLESSConfig(userID, hostName) {
+	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2Fvl%3D35.219.15.90#${hostName}`
+	return `
+	
+<hr class="config-divider" />
+<div style="display: none;">
+   <textarea id="clashTls/sgamazon">- name: Amazon.com, Inc. (SG)
+  server: mmx.vpnoir9r.us.kg
+  port: 443
+  type: vless
+  uuid: 97e8e7fe-0df3-4e28-9358-43b4744d4361
+  cipher: auto
+  tls: true
+  udp: true
+  skip-cert-verify: true
+  network: ws
+  servername: mmx.vpnoir9r.us.kg
+  ws-opts:
+    path: /sgamazon
+    headers:
+      Host: mmx.vpnoir9r.us.kg</textarea>
+ </div>
+<div style="display: none;">
+   <textarea id="clashNtls/sgamazon">- name: Amazon.com, Inc. (SG)
+  server: mmx.vpnoir9r.us.kg
+  port: 80
+  type: vless
+  uuid: e42c40e3-5ff0-464c-b6a5-7785b3026ac9
+  cipher: auto
+  tls: false
+  udp: true
+  skip-cert-verify: true
+  network: ws
+  ws-opts:
+    path: /sgamazon
+    headers:
+      Host: mmx.vpnoir9r.us.kg</textarea>
+ </div>
+<div class="config-section">
+    <p><strong>ISP  :  Amazon.com, Inc. (SG)</strong> </p>
+    <hr/>
+    <div class="config-toggle">
+        <button class="button" onclick="toggleConfig(this, 'show clash', 'hide clash')">Show Clash</button>
+        <div class="config-content">
+            <div class="config-block">
+                <h3>V2RAY:</h3>
+                <p class="config">- name: V2RAY
+  ${vlessMain}</p>
+                <button class="button" onclick='copyClash("clashTls/sgamazon")'><i class="fa fa-clipboard"></i>Copy</button>
+            </div>
+            <hr />
+            <div class="config-block">
+                <h3>CLASH:</h3>
+                <p class="config">- name: 
+  clash-meta
+- type: vless
+  name: ${hostName}
+  server: ${hostName}
+  port: 443
+  uuid: ${userID}
+  network: ws
+  tls: true
+  udp: false
+  sni: ${hostName}
+  client-fingerprint: chrome
+  ws-opts:
+    path: "/vl=35.219.15.90"
+    headers:
+      host: ${hostName}</p>
+                <button class="button" onclick='copyClash("clashNtls/sgamazon")'><i class="fa fa-clipboard"></i>Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+`;
 }
-
-const hostnames = [
-	'bmkg.xyz',                
-];
