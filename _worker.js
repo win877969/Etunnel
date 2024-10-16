@@ -1,11 +1,12 @@
-// <!--GAMFC-->version base on commit 841ed4e9ff121dde0ed6a56ae800c2e6c4f66056, time is 2024-04-16 18:02:37 UTC<!--GAMFC-END-->.
+// <!--GAMFC-->version base on commit c17ceb86be8e16c53fcfdf4b7dcd09e9e372863b, time is 2023-06-05 18:02:59 UTC<!--GAMFC-END-->.
 // @ts-ignore
-import { connect } from "cloudflare:sockets";
+import { connect } from 'cloudflare:sockets';
 
-let userID = "8f4e4a98-0d82-4f4a-a74d-9b547e737594";
+// How to generate your own UUID:
+// [Windows] Press "Win + R", input cmd and run:  Powershell -NoExit -Command "[guid]::NewGuid()"
+let userID = 'd342d11e-d424-4583-b36e-524ab1f0afa4';
 
-let proxyIP = ["35.219.15.90"];
-let hostnames = ["jp1"];
+let proxyIP = "64.68.192." + Math.floor(Math.random() * 255);
 
 if (!isValidUUID(userID)) {
 	throw new Error('uuid is not valid');
@@ -20,57 +21,25 @@ export default {
 	 */
 	async fetch(request, env, ctx) {
 		try {
-			userID = env.uuid || userID;
-			proxyIP = env.proxyip || proxyIP;
+			userID = env.UUID || userID;
+			proxyIP = env.PROXYIP || proxyIP;
 			const upgradeHeader = request.headers.get('Upgrade');
 			if (!upgradeHeader || upgradeHeader !== 'websocket') {
 				const url = new URL(request.url);
 				switch (url.pathname) {
-					/*case '/':
-						return new Response(JSON.stringify(request.cf), { status: 200 });*/
-					case '/cf':
-						return new Response(JSON.stringify(request.cf, null, 4), {
-							status: 200,
-							headers: {
-								"Content-Type": "application/json;charset=utf-8",
-							},
-						});
-					case `/bagyo`: {
-						const vlessConfig = await getVLESSConfig(userID, request.headers.get('Host'), proxyIP);
+					case '/':
+						return new Response(JSON.stringify(request.cf), { status: 200 });
+					case `/${userID}`: {
+						const vlessConfig = getVLESSConfig(userID, request.headers.get('Host'));
 						return new Response(`${vlessConfig}`, {
 							status: 200,
 							headers: {
-								"Content-Type": "text/html; charset=utf-8",
+								"Content-Type": "text/plain;charset=utf-8",
 							}
 						});
-					};
+					}
 					default:
-						//return new Response('Not found', { status: 404 });
-				         // For any other path, reverse proxy to 'ramdom website' and return the original response, caching it in the process          
-						const randomHostname = hostnames[Math.floor(Math.random() * hostnames.length)];
-						const newHeaders = new Headers(request.headers);
-						newHeaders.set('cf-connecting-ip', '1.2.3.4');
-						newHeaders.set('x-forwarded-for', '1.2.3.4');
-						newHeaders.set('x-real-ip', '1.2.3.4');
-						newHeaders.set('referer', 'https://www.google.com/search?q=edtunnel');
-						// Use fetch to proxy the request to 15 different domains
-						const proxyUrl = 'https://' + randomHostname + url.pathname + url.search;
-						let modifiedRequest = new Request(proxyUrl, {
-							method: request.method,
-							headers: newHeaders,
-							body: request.body,
-							redirect: 'manual',
-						});
-						const proxyResponse = await fetch(modifiedRequest, { redirect: 'manual' });
-						// Check for 302 or 301 redirect status and return an error response
-						if ([301, 302].includes(proxyResponse.status)) {
-							return new Response(`Redirects to ${randomHostname} are not allowed.`, {
-								status: 403,
-								statusText: 'Forbidden',
-							});
-						}
-						// Return the response from the proxy server
-						return proxyResponse;
+						return new Response('Not found', { status: 404 });
 				}
 			} else {
 				return await vlessOverWSHandler(request);
@@ -111,14 +80,13 @@ async function vlessOverWSHandler(request) {
 	let remoteSocketWapper = {
 		value: null,
 	};
-	let udpStreamWrite = null;
 	let isDns = false;
 
 	// ws --> remote
 	readableWebSocketStream.pipeTo(new WritableStream({
 		async write(chunk, controller) {
-			if (isDns && udpStreamWrite) {
-				return udpStreamWrite(chunk);
+			if (isDns) {
+				return await handleDNSQuery(chunk, webSocket, null, log);
 			}
 			if (remoteSocketWapper.value) {
 				const writer = remoteSocketWapper.value.writable.getWriter()
@@ -159,12 +127,8 @@ async function vlessOverWSHandler(request) {
 			const vlessResponseHeader = new Uint8Array([vlessVersion[0], 0]);
 			const rawClientData = chunk.slice(rawDataIndex);
 
-			// TODO: support udp here when cf runtime has udp support
 			if (isDns) {
-				const { write } = await handleUDPOutBound(webSocket, vlessResponseHeader, log);
-				udpStreamWrite = write;
-				udpStreamWrite(rawClientData);
-				return;
+				return handleDNSQuery(rawClientData, webSocket, vlessResponseHeader, log);
 			}
 			handleTCPOutBound(remoteSocketWapper, addressRemote, portRemote, rawClientData, webSocket, vlessResponseHeader, log);
 		},
@@ -550,77 +514,54 @@ function stringify(arr, offset = 0) {
 	return uuid;
 }
 
-
 /**
  * 
+ * @param {ArrayBuffer} udpChunk 
  * @param {import("@cloudflare/workers-types").WebSocket} webSocket 
  * @param {ArrayBuffer} vlessResponseHeader 
  * @param {(string)=> void} log 
  */
-async function handleUDPOutBound(webSocket, vlessResponseHeader, log) {
+async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
+	// no matter which DNS server client send, we alwasy use hard code one.
+	// beacsue someof DNS server is not support DNS over TCP
+	try {
+		const dnsServer = '8.8.4.4'; // change to 1.1.1.1 after cf fix connect own ip bug
+		const dnsPort = 53;
+		/** @type {ArrayBuffer | null} */
+		let vlessHeader = vlessResponseHeader;
+		/** @type {import("@cloudflare/workers-types").Socket} */
+		const tcpSocket = connect({
+			hostname: dnsServer,
+			port: dnsPort,
+		});
 
-	let isVlessHeaderSent = false;
-	const transformStream = new TransformStream({
-		start(controller) {
-
-		},
-		transform(chunk, controller) {
-			// udp message 2 byte is the the length of udp data
-			// TODO: this should have bug, beacsue maybe udp chunk can be in two websocket message
-			for (let index = 0; index < chunk.byteLength;) {
-				const lengthBuffer = chunk.slice(index, index + 2);
-				const udpPakcetLength = new DataView(lengthBuffer).getUint16(0);
-				const udpData = new Uint8Array(
-					chunk.slice(index + 2, index + 2 + udpPakcetLength)
-				);
-				index = index + 2 + udpPakcetLength;
-				controller.enqueue(udpData);
-			}
-		},
-		flush(controller) {
-		}
-	});
-
-	// only handle dns udp for now
-	transformStream.readable.pipeTo(new WritableStream({
-		async write(chunk) {
-			const resp = await fetch('https://1.1.1.1/dns-query',
-				{
-					method: 'POST',
-					headers: {
-						'content-type': 'application/dns-message',
-					},
-					body: chunk,
-				})
-			const dnsQueryResult = await resp.arrayBuffer();
-			const udpSize = dnsQueryResult.byteLength;
-			// console.log([...new Uint8Array(dnsQueryResult)].map((x) => x.toString(16)));
-			const udpSizeBuffer = new Uint8Array([(udpSize >> 8) & 0xff, udpSize & 0xff]);
-			if (webSocket.readyState === WS_READY_STATE_OPEN) {
-				log(`doh success and dns message length is ${udpSize}`);
-				if (isVlessHeaderSent) {
-					webSocket.send(await new Blob([udpSizeBuffer, dnsQueryResult]).arrayBuffer());
-				} else {
-					webSocket.send(await new Blob([vlessResponseHeader, udpSizeBuffer, dnsQueryResult]).arrayBuffer());
-					isVlessHeaderSent = true;
+		log(`connected to ${dnsServer}:${dnsPort}`);
+		const writer = tcpSocket.writable.getWriter();
+		await writer.write(udpChunk);
+		writer.releaseLock();
+		await tcpSocket.readable.pipeTo(new WritableStream({
+			async write(chunk) {
+				if (webSocket.readyState === WS_READY_STATE_OPEN) {
+					if (vlessHeader) {
+						webSocket.send(await new Blob([vlessHeader, chunk]).arrayBuffer());
+						vlessHeader = null;
+					} else {
+						webSocket.send(chunk);
+					}
 				}
-			}
-		}
-	})).catch((error) => {
-		log('dns udp has error' + error)
-	});
-
-	const writer = transformStream.writable.getWriter();
-
-	return {
-		/**
-		 * 
-		 * @param {Uint8Array} chunk 
-		 */
-		write(chunk) {
-			writer.write(chunk);
-		}
-	};
+			},
+			close() {
+				log(`dns server(${dnsServer}) tcp is close`);
+			},
+			abort(reason) {
+				console.error(`dns server(${dnsServer}) tcp is abort`, reason);
+			},
+		}));
+	} catch (error) {
+		console.error(
+			`handleDNSQuery have exception, error: ${error.message}`
+		);
+	}
 }
 
 /**
@@ -629,52 +570,38 @@ async function handleUDPOutBound(webSocket, vlessResponseHeader, log) {
  * @param {string | null} hostName
  * @returns {string}
  */
-async function getVLESSConfig(userID, hostName, proxyIP) {
-    try {
-        const response = await fetch(`https://skuylan.my.id/api?ip=${proxyIP}`);
-
-        const data = await response.json();
-        const proxyip = data.proxyStatus;
-        const isp = data.isp;
-        const country = data.country;
-        const city = data.city;
-        const country_code = data.countryCode;
-        const vlessTls = `vless://${userID}\u0040${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2Fvless-ws#${isp} (${country_code})`;
-        const vlessNtls = `vless://${userID}\u0040${hostName}:80?path=%2Fvless-ws&security=none&encryption=none&host=${hostName}&fp=randomized&type=ws&sni=${hostName}#${isp} (${country_code})`;
-        const vlessXcl = `vless://${userID}\u0040ava.game.naver.com:443?encryption=none&security=tls&sni=ava.game.naver.com.${hostName}&fp=randomized&type=ws&host=ava.game.naver.com.${hostName}&path=%2Fvless-ws#${isp} (${country_code})`;
-		const vlessTlsFormatted = vlessTls.replace(/ /g, '+');
+function getVLESSConfig(userID, hostName) {
+	const vlessTls = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=/vl=35.219.15.90#VlessTls`
+        const vlessNtls = `vless://${userID}@${hostName}:80?path=/vl=35.219.15.90&security=none&encryption=none&host=${hostName}&fp=randomized&type=ws&sni=${hostName}#$VlessNtls`;
+	const vlessTlsFormatted = vlessTls.replace(/ /g, '+');
         const vlessNtlsFormatted = vlessNtls.replace(/ /g, '+');
-        const vlessXclFormatted = vlessXcl.replace(/ /g, '+');
-		const output =
-`<h1><center>========================================
+        const output = `<div><h1><center>========================================
 VLESS ACCOUNT INFORMATION
-=========================================</center></h1>
-</div>» DOMAIN      : ${hostName}
-» ISP         : ${isp}
-» COUNTRY     : ${country}
-» CITY        : ${city}
+=========================================
+</center></h1>
+</div>
+» DOMAIN      : ${hostName}
+» ISP         : AKAMAI
+» COUNTRY     : ID
+» CITY        : JAKARTA
 » USER ID     : ${userID}
 » PROXYIP     : ${proxyip}
 » PORT TLS    : 443
 » PORT NTLS   : 80
 » SECURITY    : auto
 » NETWORK     : (WS)
-» PATH        : /vless-ws
+» PATH        :/vl=35.219.15.90
 <div style="text-align: center;">
 ========================================
-<b> VLESS TLS 443 </b> <button onclick='copyToClipboard("${vlessTlsFormatted}")'><i class="fa fa-clipboard"></i> Copy </button>
+<b> VLESS TLS 443 </b> <button onclick='copyToClipboard("${vlessTls}")'><i class="fa fa-clipboard"></i> Copy </button>
 ========================================
-<b> VLESS NTLS 80 </b> <button onclick='copyToClipboard("${vlessNtlsFormatted}")'><i class="fa fa-clipboard"></i> Copy </button>
+<b> VLESS NTLS 80 </b> <button onclick='copyToClipboard("${vlessNtls}")'><i class="fa fa-clipboard"></i> Copy </button>
 ========================================
-<b> Pointing XCL Only </b> <button onclick='copyToClipboard("${vlessXclFormatted}")'><i class="fa fa-clipboard"></i> Copy </button>
-========================================
-
-
-<div style="text-align: center;">
-  <a href="https://t.me/bagyog" target="_blank" style="text-decoration: none;">Thanks to: <button style="color: #00D69F; background-color: transparent; border: none;">Telegram</button></a>
-</div>`;
-
-        const htmlHead = `
+	    <div style="text-align: center;">
+  <a href="https://t.me/seaker877" target="_blank" style="text-decoration: none;">Thanks to: <button style="color: #00D69F; background-color: transparent; border: none;">Telegram</button></a>
+</div>
+`;
+	const htmlHead = `
 <head>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
 
@@ -727,7 +654,7 @@ VLESS ACCOUNT INFORMATION
 `;
 
         return `
-<html>
+	<html>
 ${htmlHead}
 <body>
 <pre>${output}</pre>
