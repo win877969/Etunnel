@@ -671,8 +671,5 @@ ${htmlHead}
 </script>
 </body>
 </html>`;
-    } catch (error) {
-        console.error("Error generating VLESS config:", error);
-        return `<p>Error generating VLESS config. Please try again later.</p>`;
-    }
+    } 
 }
