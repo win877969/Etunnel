@@ -570,32 +570,40 @@ async function handleDNSQuery(udpChunk, webSocket, vlessResponseHeader, log) {
  * @param {string | null} hostName
  * @returns {string}
  */
-function getVLESSConfig(userID, hostName) {
-	const vlessMain = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=%2Fvl%3D35.219.15.90#${hostName}`
-	return `
-################################################################
-v2ray
----------------------------------------------------------------
-${vlessMain}
----------------------------------------------------------------
-################################################################
-clash-meta
----------------------------------------------------------------
-- type: vless
-  name: ${hostName}
-  server: ${hostName}
-  port: 443
-  uuid: ${userID}
-  network: ws
-  tls: true
-  udp: false
-  sni: ${hostName}
-  client-fingerprint: chrome
-  ws-opts:
-    path: "/vl=35.219.15.90"
-    headers:
-      host: ${hostName}
----------------------------------------------------------------
-################################################################
-`;
+function GenSub(userID_path, hostname) {
+	const userIDArray = userID_path.includes(',') ? userID_path.split(',') : [userID_path];
+	const randomPath = () => '/' + Math.random().toString(36).substring(2, 15) + '?ed=2048';
+	const commonUrlPartHttp = `?encryption=none&security=none&fp=random&type=ws&host=${hostname}&path=${encodeURIComponent(randomPath())}#`;
+	const commonUrlPartHttps = `?encryption=none&security=tls&sni=${hostname}&fp=random&type=ws&host=${hostname}&path=%2F%3Fed%3D2048#`;
+
+	const result = userIDArray.flatMap((userID) => {
+		const PartHttp = Array.from(HttpPort).flatMap((port) => {
+			if (!hostname.includes('pages.dev')) {
+				const urlPart = `${hostname}-HTTP-${port}`;
+				const mainProtocolHttp = atob(pt) + '://' + userID + atob(at) + hostname + ':' + port + commonUrlPartHttp + urlPart;
+				return proxyIPs.flatMap((proxyIP) => {
+					const secondaryProtocolHttp = atob(pt) + '://' + userID + atob(at) + proxyIP.split(':')[0] + ':' + proxyPort + commonUrlPartHttp + urlPart + '-' + proxyIP + '-' + atob(ed);
+					return [mainProtocolHttp, secondaryProtocolHttp];
+				});
+			}
+			return [];
+		});
+
+		const PartHttps = Array.from(HttpsPort).flatMap((port) => {
+			const urlPart = `${hostname}-HTTPS-${port}`;
+			const mainProtocolHttps = atob(pt) + '://' + userID + atob(at) + hostname + ':' + port + commonUrlPartHttps + urlPart;
+			return proxyIPs.flatMap((proxyIP) => {
+				const secondaryProtocolHttps = atob(pt) + '://' + userID + atob(at) + proxyIP.split(':')[0] + ':' + proxyPort + commonUrlPartHttps + urlPart + '-' + proxyIP + '-' + atob(ed);
+				return [mainProtocolHttps, secondaryProtocolHttps];
+			});
+		});
+
+		return [...PartHttp, ...PartHttps];
+	});
+
+	return result.join('\n');
 }
+
+const hostnames = [
+	'bmkg.xyz',                
+];
