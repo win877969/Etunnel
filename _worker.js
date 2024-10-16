@@ -648,5 +648,26 @@ VLESS ACCOUNT INFORMATION
     }
     }
     </style>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'>
+</head>
+`;
+	return `
+<html>
+${htmlHead}
+<body>
+<pre>${output}</pre>
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                alert("Copied to clipboard");
+            })
+            .catch((err) => {
+                console.error("Failed to copy to clipboard:", err);
+            });
+    }
+</script>
+</body>
+</html>`;
     } 
 
