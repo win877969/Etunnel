@@ -575,11 +575,10 @@ function getVLESSConfig(userID, hostName) {
 	const vlessTls = `vless://${userID}@${hostName}:443?encryption=none&security=tls&sni=${hostName}&fp=randomized&type=ws&host=${hostName}&path=/vl=35.219.15.90#VlessTls`
         const vlessNtls = `vless://${userID}@${hostName}:80?path=/vl=35.219.15.90&security=none&encryption=none&host=${hostName}&fp=randomized&type=ws&sni=${hostName}#$VlessNtls`;
 	return `
- <div><h1><center>========================================
+========================================
 VLESS ACCOUNT INFORMATION
 =========================================
-</center></h1>
-</div>
+
 » DOMAIN      : ${hostName}
 » ISP         : AKAMAI
 » COUNTRY     : ID
@@ -593,86 +592,11 @@ VLESS ACCOUNT INFORMATION
 » PATH        :/vl=35.219.15.90
 <div style="text-align: center;">
 ========================================
-<b> VLESS TLS 443 </b> <button onclick='copyToClipboard("${vlessTls}")'><i class="fa fa-clipboard"></i> Copy </button>
+<VLESS TLS 443 
+${vlessTls}
 ========================================
-<b> VLESS NTLS 80 </b> <button onclick='copyToClipboard("${vlessNtls}")'><i class="fa fa-clipboard"></i> Copy </button>
+VLESS NTLS 80 
+${vlessNtls}
 ========================================
-	    <div style="text-align: center;">
-  <a href="https://t.me/seaker877" target="_blank" style="text-decoration: none;">Thanks to: <button style="color: #00D69F; background-color: transparent; border: none;">Telegram</button></a>
-</div>
-`;
-	const htmlHead = `
-<head>
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-
-    <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #000;
-        color: #00D69F;
-        padding: 10px 0;
-    }
-
-    a {
-        color: #red;
-        text-decoration: none;
-    }
-    img {
-        max-width: 100%;
-        height: auto;
-    }
-
-    pre {
-        white-space: pre-wrap;
-        word-wrap: break-word;
-        background-color: #000;
-        border: 3px solid #00D69F;
-        padding: 15px;
-        margin: 10px;
-    }
-
-
-
-    a {
-        color: #9db4ff;
-    }
-
-    pre {
-        background-color: #282a36;
-        border-color: #00D69F;
-		border-radius: 30px;
-		border-top: 10px solid #00D69F;
-	    border-bottom: 10px solid #00D69F;
-		border-left: 5px solid #00D69F;
-		border-right: 5px solid #00D69F;
-    }
-    }
-    </style>
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'>
-</head>
-`;
-	return `
-<html>
-${htmlHead}
-<body>
-<pre>${output}</pre>
-<script>
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text)
-            .then(() => {
-                alert("Copied to clipboard");
-            })
-            .catch((err) => {
-                console.error("Failed to copy to clipboard:", err);
-            });
-    }
-</script>
-</body>
-</html>`;
+	    `;
 	} 
-//catch ='(error) {
-      //  console.error("Error generating VLESS config:", error);
-       // return ` <p>Error generating VLESS config. Please try again later.</p>`;
-    
-    
-
