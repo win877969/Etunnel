@@ -601,5 +601,52 @@ VLESS ACCOUNT INFORMATION
   <a href="https://t.me/seaker877" target="_blank" style="text-decoration: none;">Thanks to: <button style="color: #00D69F; background-color: transparent; border: none;">Telegram</button></a>
 </div>
 `;
+	const htmlHead = `
+<head>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+
+    <style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #000;
+        color: #00D69F;
+        padding: 10px 0;
+    }
+
+    a {
+        color: #red;
+        text-decoration: none;
+    }
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        background-color: #000;
+        border: 3px solid #00D69F;
+        padding: 15px;
+        margin: 10px;
+    }
+
+
+
+    a {
+        color: #9db4ff;
+    }
+
+    pre {
+        background-color: #282a36;
+        border-color: #00D69F;
+		border-radius: 30px;
+		border-top: 10px solid #00D69F;
+	    border-bottom: 10px solid #00D69F;
+		border-left: 5px solid #00D69F;
+		border-right: 5px solid #00D69F;
+    }
+    }
+    </style>
     } 
 
