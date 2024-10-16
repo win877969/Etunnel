@@ -580,9 +580,7 @@ VLESS ACCOUNT INFORMATION
 =========================================
 
 » DOMAIN      : ${hostName}
-» ISP         : AKAMAI
 » COUNTRY     : ID
-» CITY        : JAKARTA
 » USER ID     : ${userID}
 » PROXYIP     : 35.219.15.90
 » PORT TLS    : 443
@@ -590,9 +588,9 @@ VLESS ACCOUNT INFORMATION
 » SECURITY    : auto
 » NETWORK     : (WS)
 » PATH        :/vl=35.219.15.90
-<div style="text-align: center;">
+
 ========================================
-<VLESS TLS 443 
+VLESS TLS 443 
 ${vlessTls}
 ========================================
 VLESS NTLS 80 
